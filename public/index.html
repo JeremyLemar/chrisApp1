@@ -56,19 +56,34 @@
     }
     .results {
       margin-top: 16px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      overflow: hidden;
     }
     .results:empty { display: none; }
     .result-item {
-      padding: 12px 16px;
-      border-bottom: 1px solid #eee;
-      color: #333;
+      padding: 16px 0;
     }
-    .result-item:last-child { border-bottom: none; }
-    .no-results { padding: 12px 16px; color: #999; }
+    .result-item .result-url {
+      font-size: 13px;
+      color: #202124;
+      line-height: 1.3;
+    }
+    .result-item .result-title {
+      font-size: 18px;
+      line-height: 1.3;
+      margin: 2px 0 4px;
+    }
+    .result-item .result-title a {
+      color: #1a0dab;
+      text-decoration: none;
+    }
+    .result-item .result-title a:hover { text-decoration: underline; }
+    .result-item .result-title a:visited { color: #681da8; }
+    .result-item .result-snippet {
+      font-size: 14px;
+      color: #4d5156;
+      line-height: 1.5;
+    }
+    .no-results { padding: 12px 0; color: #999; }
+    .error-message { padding: 12px 0; color: #d93025; }
   </style>
 </head>
 <body>
@@ -76,7 +91,7 @@
     <h1>Search</h1>
     <div class="search-box">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-      <input type="text" id="searchInput" placeholder="Search items..." autofocus>
+      <input type="text" id="searchInput" placeholder="Search Google..." autofocus>
       <button id="searchBtn">Search</button>
     </div>
     <div class="results" id="results"></div>
@@ -91,6 +106,12 @@
       if (e.key === 'Enter') doSearch();
     });
 
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     async function doSearch() {
       const query = input.value.trim();
       if (!query) {
@@ -100,15 +121,23 @@
       try {
         const resp = await fetch('/api/search?q=' + encodeURIComponent(query));
         const data = await resp.json();
-        if (data.results.length === 0) {
+        if (data.error) {
+          resultsDiv.innerHTML = '<div class="error-message">' + escapeHtml(data.error) + '</div>';
+        } else if (data.results.length === 0) {
           resultsDiv.innerHTML = '<div class="no-results">No results found</div>';
         } else {
           resultsDiv.innerHTML = data.results
-            .map(r => '<div class="result-item">' + r + '</div>')
+            .map(r =>
+              '<div class="result-item">' +
+                '<div class="result-url">' + escapeHtml(r.displayLink) + '</div>' +
+                '<div class="result-title"><a href="' + escapeHtml(r.link) + '" target="_blank" rel="noopener">' + escapeHtml(r.title) + '</a></div>' +
+                '<div class="result-snippet">' + escapeHtml(r.snippet) + '</div>' +
+              '</div>'
+            )
             .join('');
         }
       } catch (err) {
-        resultsDiv.innerHTML = '<div class="no-results">Search error</div>';
+        resultsDiv.innerHTML = '<div class="error-message">Search error</div>';
       }
     }
   </script>
