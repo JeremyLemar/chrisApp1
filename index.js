@@ -9,17 +9,14 @@ const items = [
   'Raspberry', 'Strawberry', 'Tangerine', 'Watermelon'
 ];
 
-function sortedLetters(str) {
-  return str.toLowerCase().replace(/[^a-z]/g, '').split('').sort().join('');
-}
-
 app.get('/api/search', (req, res) => {
   const query = (req.query.q || '').trim();
   if (!query) {
     return res.json({ results: [] });
   }
-  const querySorted = sortedLetters(query);
-  const results = items.filter(item => sortedLetters(item) === querySorted);
+  const count = Math.floor(Math.random() * items.length) + 1;
+  const shuffled = [...items].sort(() => Math.random() - 0.5);
+  const results = shuffled.slice(0, count);
   res.json({ results });
 });
 
