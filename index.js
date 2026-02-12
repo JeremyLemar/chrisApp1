@@ -30,6 +30,13 @@ app.get('/api/search', async (req, res) => {
 
     if (!response.ok) {
       const message = data.error?.message || 'Google Search API request failed';
+      if (data.error?.status === 'PERMISSION_DENIED' || response.status === 403) {
+        return res.status(response.status).json({
+          error: 'The Google Cloud project does not have the Custom Search JSON API enabled. '
+            + 'Go to https://console.developers.google.com/apis/api/customsearch.googleapis.com/overview and enable it for your project, '
+            + 'then wait a few minutes for the change to propagate.'
+        });
+      }
       if (data.error?.status === 'INVALID_ARGUMENT') {
         return res.status(response.status).json({ error: 'Invalid API configuration. Verify that GOOGLE_CX is a valid Programmable Search Engine ID and GOOGLE_API_KEY has the Custom Search API enabled.' });
       }
