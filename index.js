@@ -29,13 +29,16 @@ app.get('/api/search', async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('Google API error:', JSON.stringify(data.error, null, 2));
       const message = data.error?.message || 'Google Search API request failed';
-      if (data.error?.status === 'PERMISSION_DENIED' || response.status === 403) {
-        return res.status(response.status).json({
-          error: 'Access denied to Custom Search JSON API. Possible causes: '
-            + '(1) The API is not enabled — visit https://console.developers.google.com/apis/api/customsearch.googleapis.com/overview to enable it. '
-            + '(2) Your API key has restrictions (IP, referrer, or allowed-APIs list) that block this request — check APIs & Services > Credentials in the Cloud Console. '
-            + '(3) The API key belongs to a different project than the one where the API is enabled.'
+      const reason = data.error?.errors?.[0]?.reason;
+      if (response.status === 403 && reason === 'dailyLimitExceeded') {
+        return res.status(403).json({ error: 'Daily API quota exceeded. The free tier allows 100 queries per day.' });
+      }
+      if (response.status === 403) {
+        return res.status(403).json({
+          error: message + ' — Check that the Custom Search API is enabled and your API key is not restricted. '
+            + 'See the server logs for the full error from Google.'
         });
       }
       if (data.error?.status === 'INVALID_ARGUMENT') {
