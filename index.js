@@ -9,12 +9,17 @@ const items = [
   'Raspberry', 'Strawberry', 'Tangerine', 'Watermelon'
 ];
 
+function sortedLetters(str) {
+  return str.toLowerCase().replace(/[^a-z]/g, '').split('').sort().join('');
+}
+
 app.get('/api/search', (req, res) => {
-  const query = (req.query.q || '').toLowerCase().trim();
+  const query = (req.query.q || '').trim();
   if (!query) {
     return res.json({ results: [] });
   }
-  const results = items.filter(item => item.toLowerCase().includes(query));
+  const querySorted = sortedLetters(query);
+  const results = items.filter(item => sortedLetters(item) === querySorted);
   res.json({ results });
 });
 
@@ -46,11 +51,26 @@ app.get('/', (req, res) => {
       padding: 12px 16px 12px 42px;
       font-size: 16px;
       border: 2px solid #ddd;
-      border-radius: 8px;
+      border-radius: 8px 0 0 8px;
       outline: none;
       transition: border-color 0.2s;
     }
     .search-box input:focus { border-color: #4a90d9; }
+    .search-box button {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      padding: 0 20px;
+      font-size: 16px;
+      background: #4a90d9;
+      color: #fff;
+      border: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .search-box button:hover { background: #357abd; }
     .search-box svg {
       position: absolute;
       left: 14px;
@@ -83,17 +103,18 @@ app.get('/', (req, res) => {
     <div class="search-box">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
       <input type="text" id="searchInput" placeholder="Search items..." autofocus>
+      <button id="searchBtn">Search</button>
     </div>
     <div class="results" id="results"></div>
   </div>
   <script>
     const input = document.getElementById('searchInput');
     const resultsDiv = document.getElementById('results');
-    let debounceTimer;
+    const searchBtn = document.getElementById('searchBtn');
 
-    input.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(doSearch, 300);
+    searchBtn.addEventListener('click', doSearch);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSearch();
     });
 
     async function doSearch() {
